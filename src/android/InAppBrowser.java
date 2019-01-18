@@ -273,7 +273,7 @@ public class InAppBrowser extends CordovaPlugin {
             if (args.getBoolean(1)) {
                 jsWrapper = String.format("(function(){prompt(JSON.stringify([eval(%%s)]), 'gap-iab://%s')})()", callbackContext.getCallbackId());
             }
-            runJavascriptWithResult(args.getString(0), callbackContext)
+            runJavascriptWithResult(args.getString(0), callbackContext);
         }
         else if (action.equals("injectScriptFile")) {
             String jsWrapper;
