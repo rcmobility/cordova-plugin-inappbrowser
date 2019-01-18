@@ -75,6 +75,7 @@ import org.apache.cordova.PluginManager;
 import org.apache.cordova.PluginResult;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
@@ -272,7 +273,7 @@ public class InAppBrowser extends CordovaPlugin {
             if (args.getBoolean(1)) {
                 jsWrapper = String.format("(function(){prompt(JSON.stringify([eval(%%s)]), 'gap-iab://%s')})()", callbackContext.getCallbackId());
             }
-            injectDeferredObject(args.getString(0), jsWrapper);
+            runJavascriptWithResult(args.getString(0), callbackContext)
         }
         else if (action.equals("injectScriptFile")) {
             String jsWrapper;
@@ -409,6 +410,35 @@ public class InAppBrowser extends CordovaPlugin {
         } else {
             LOG.d(LOG_TAG, "Can't inject code into the system browser");
         }
+    }
+
+    private void runJavascriptWithResult(String scriptToInject, CallbackContext callbackContext) {
+        final String finalScriptToInject = scriptToInject;
+        final CallbackContext finalCallbackContext = callbackContext;
+
+        try {
+            Thread.sleep(100);
+        } catch (Exception e) {
+        }
+
+        this.cordova.getActivity().runOnUiThread(new Runnable() {
+            @SuppressLint("NewApi")
+            @Override
+            public void run() {
+                inAppWebView.evaluateJavascript(finalScriptToInject, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        PluginResult pluginResult;
+                        try {
+                            pluginResult = new PluginResult(PluginResult.Status.OK, new JSONArray("[" + s + "]"));
+                        } catch(JSONException e) {
+                            pluginResult = new PluginResult(PluginResult.Status.JSON_EXCEPTION, e.getMessage());
+                        }
+                        finalCallbackContext.sendPluginResult(pluginResult);
+                    }
+                });
+            }
+        });
     }
 
     /**
